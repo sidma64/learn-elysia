@@ -7,16 +7,11 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("MONGODB_URL")
+  url      = env("MONGODB_URI")
 }
 
 model User {
   id    Int    @id @unique @default(autoincrement())
   name  String @unique
   email String @unique
-}
-
-enum Role {
-  USER
-  ADMIN
 }
