@@ -1,42 +1,47 @@
 import { Elysia, t } from 'elysia';
 import { PrismaClient } from '@prisma/client';
+import { swagger } from '@elysiajs/swagger';
 
-const prisma = new PrismaClient();
+const db = new PrismaClient();
 
 const app = new Elysia();
 
-app.get('/', async () => await prisma.user.count());
-app.get('/users', async () => await prisma.user.findMany());
-app.post(
-    '/users',
-    async ({ body }) => {
-        const { username, email, password } = body;
-        const hashedPassword = await Bun.password.hash(password);
-        if (await prisma.user.findUnique({ where: { email: email } })) {
-            throw new Error('Email already exists');
-        }
-        if (await prisma.user.findUnique({ where: { name: username } })) {
-            throw new Error('Username already exists');
-        }
+const messageObject = t.Object({
+    message: t.String(),
+});
 
-        return await prisma.user.create({
-            data: {
-                name: username,
-                email: email,
-                password: hashedPassword,
-            },
-        });
+const indexSchema = {
+    response: {
+        200: messageObject,
     },
-    {
-        body: t.Object({
-            username: t.String(),
-            email: t.String(),
-            password: t.String(),
-        }),
-    }
-);
+};
 
-app.listen(3000);
+const helloWorld = () => {
+    return { message: 'Hello World!' };
+};
+
+const signupSchema = {
+    body: t.Object({
+        email: t.String(),
+        username: t.String(),
+        password: t.String(),
+    }),
+};
+
+const signup = async (req: any) => {
+    const { email, username, password } = req.body;
+    db.user.create({
+        data: {
+            email,
+            username,
+            password,
+        },
+    });
+};
+
+app.use(swagger())
+    .get('/', helloWorld, indexSchema)
+    .listen(Bun.env.PORT || 3000);
 
 console.log(
     `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
